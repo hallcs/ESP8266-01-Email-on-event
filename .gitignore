@@ -1,0 +1,34 @@
+  -- First Connect to Wifif, add Your access point's SSID and password
+local SSID = "Your local Wifi Router SSID" 
+local SSID_PASSWORD = "Wifi Password"
+
+-- Next configure ESP as a station
+wifi.setmode(wifi.STATION)
+wifi.sta.config(SSID,SSID_PASSWORD)
+wifi.sta.autoconnect(1)
+
+-- Monitor GPI02 to go low (Ground) with debouncing.
+local pin = 4    --> GPIO2
+
+function debounce (func)
+    local last = 0
+    local delay = 200000
+
+    return function (...)
+        local now = tmr.now()
+        if now - last < delay then return end
+
+        last = now
+        return func(...)
+    end
+end
+
+-- If there is a change in the status of GPI02 then do this
+function onChange ()
+    print('The pin value has changed to '..gpio.read(pin))
+    if (gpio.read(pin) == 0) then dofile("Alarm_Email.lua") elseif (gpio.read(pin) == 1) then print("Door_Closed")
+    end
+end
+
+gpio.mode(pin, gpio.INT)
+gpio.trig(pin, 'both', debounce(onChange))
